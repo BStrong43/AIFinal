@@ -65,4 +65,9 @@ public class FuzzyLogicController : MonoBehaviour
     {
 
     }
+
+    public Vector3 getHealthValue()
+    {
+        return new Vector3(healthyValue, hurtValue, criticalValue);
+    }
 }
