@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-enum SNAKE_STATE 
+public enum SNAKE_STATE 
 { 
     SEEKING_COVER = 0,
     NEED_HEALING,
@@ -21,13 +21,21 @@ enum DEFUZZ_MODE
 public class FuzzyLogicController : MonoBehaviour
 {
     public AnimationCurve critical, hurt, healthy;
+    public AnimationCurve creep, walk, run;
     public float health = 100.0f;
     public Transform healthKit, cover, player;
-    Transform target;
+
+    Vector3 target;
+
     [SerializeField]
     DEFUZZ_MODE defuzzMode;
 
-    SNAKE_STATE state;
+    public SNAKE_STATE state;
+    Rigidbody rb;
+
+    float runSpeed = 4.0f,
+          walkSpeed = 2.2f,
+          creepSpeed = 0.75f;
 
     float healthyValue = 0,
           hurtValue = 0,
@@ -35,7 +43,7 @@ public class FuzzyLogicController : MonoBehaviour
 
     void Start()
     {
-        
+        rb = GetComponent<Rigidbody>();
     }
 
     void Update()
@@ -63,6 +71,8 @@ public class FuzzyLogicController : MonoBehaviour
         
         if(Input.GetKeyDown(KeyCode.U))
             health = 100f;
+
+        health = Mathf.Clamp(health, 0.0f, 100.0f);
     }
 
     void getFuzzyValues() 
@@ -99,23 +109,38 @@ public class FuzzyLogicController : MonoBehaviour
         switch (state)
         {
             case SNAKE_STATE.ATTACKING:
-                target = player;
+                target = player.position;
                 break;
 
             case SNAKE_STATE.SEEKING_COVER:
-                target = cover;
+                target = cover.position;
                 break;
 
             case SNAKE_STATE.NEED_HEALING:
-                target = healthKit;
+                target = healthKit.position;
                 break;
         }
     }
 
     void performAction()
     {
-        //Blended fuzzy logic for speed
-        //Look at books example
+        float diff = Vector3.Distance(transform.position, target);
+        Debug.Log(diff);
+        float runValue = run.Evaluate(diff);
+        float walkValue = walk.Evaluate(diff);
+        float creepValue = creep.Evaluate(diff);
+        
+        //Blended defuzzification
+        float speed = (runSpeed * runValue) + (walkSpeed * walkValue) + (creepSpeed * creepValue);
+        speed = Mathf.Clamp(speed, 0, runSpeed);
+        speed *= Time.deltaTime;
+
+        Vector3 dir = Vector3.Lerp(transform.position, target - transform.position, 1);
+        //Debug.Log(dir);
+        if (diff > .75f)
+            rb.velocity = dir * speed;
+        else
+            rb.velocity = Vector3.zero;
     }
 
     public Vector3 getHealthValue()
@@ -149,7 +174,8 @@ public class FuzzyLogicController : MonoBehaviour
     void weightedRandomDecision()
     {
         Vector3 weightedValues = getHealthValue().normalized;
-        float choice = Random.Range(0.0f, 1.0f);
+        float maxBound = weightedValues.x + weightedValues.y + weightedValues.z;
+        float choice = Random.Range(0.0f, maxBound);
 
         float lowerBound = weightedValues.x,
               upperBound = weightedValues.x + weightedValues.y;
@@ -164,7 +190,7 @@ public class FuzzyLogicController : MonoBehaviour
             //Chose Hurt option
             state = SNAKE_STATE.SEEKING_COVER;
         }
-        if(choice >= upperBound && choice <= 1.0f)
+        if(choice >= upperBound && choice <= maxBound)
         {
             //Chose critical option
             state = SNAKE_STATE.NEED_HEALING;
