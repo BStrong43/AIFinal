@@ -14,7 +14,6 @@ enum DEFUZZ_MODE
 {
     HIGHEST_PRIORITY,
     WEIGHTED_RANDOM,
-    CENTER_OF_GRAV,
     BINARY_LOGIC
 }
 
@@ -94,10 +93,6 @@ public class FuzzyLogicController : MonoBehaviour
                 weightedRandomDecision();
                 break;
 
-            case DEFUZZ_MODE.CENTER_OF_GRAV:
-                centerOfGravityDecision();
-                break;
-
             case DEFUZZ_MODE.BINARY_LOGIC:
                 binaryDecision();
                 break;
@@ -146,11 +141,6 @@ public class FuzzyLogicController : MonoBehaviour
     public Vector3 getHealthValue()
     {
         return new Vector3(healthyValue, hurtValue, criticalValue);
-    }
-
-    void centerOfGravityDecision()
-    {
-
     }
 
     void priorityDecision()
